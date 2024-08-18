@@ -16,7 +16,6 @@ from random import randint
 import random
 import numpy as np
 from pathlib import Path
-import matplotlib.pyplot as plt
 # Set the width and height of your output window, in pixels
 WIDTH = 1000
 HEIGHT = 700
