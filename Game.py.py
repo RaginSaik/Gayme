@@ -16,8 +16,9 @@ from random import randint
 import random
 import numpy as np
 from pathlib import Path
+import matplotlib.pyplot as plt
 # Set the width and height of your output window, in pixels
-WIDTH = 700
+WIDTH = 1000
 HEIGHT = 700
 # Classes
 
@@ -45,6 +46,9 @@ class ArcadeBasic(arcade.Window):
         self.pastpos=[]
         #list for target sprites
         self.targets = arcade.SpriteList()
+        #list for enemy sprites
+        self.enemies = arcade.SpriteList()
+        self.enemyvel = []
 
     def setup(self):
         arcade.set_background_color(color=(0,0,0))
@@ -61,24 +65,47 @@ class ArcadeBasic(arcade.Window):
         self.player.keya = False
         self.player.keys = False
         self.player.keyd = False
-        #inital spawn intervall of targets
-        self.targetspawnintervall = 3
+        #inital spawn interval of targets
+        self.targetspawninterval = 3
         #initialize target hit count
         self.targethitcount = 0
+        #nitial enemy spawn interval
+        self.enemyspawninterval = 2
+        #initial enemy hit count
+        self.enemyhitcount = 0
         #setup frame counter
         self.frames = 0
-        #is game over?
+        #is game won?
         self.finished = False
+        #is game lost?
+        self.lost = False
         #remove all targets
         for target in self.targets:
-            target.remove_from_sprite_lists()
+            target.remove_from_sprite_lists()    
+        #remove all enemies
+        for enemy in self.enemies:
+            enemy.remove_from_sprite_lists()
+        #setup array with coordinates of edge screen and 50 further out
+        self.outofbounds = []
+        #lower edge
+        self.outofbounds += list(zip(np.linspace(-50,WIDTH+50,WIDTH+101),np.linspace(-50,-50,WIDTH+101)))
+        #upper edge
+        self.outofbounds += list(zip(np.linspace(-50,WIDTH+50,WIDTH+101),np.linspace(HEIGHT+50,HEIGHT+50,WIDTH+101)))
+        #left edge
+        self.outofbounds += list(zip(np.linspace(-50,-50,HEIGHT+99),np.linspace(-49,HEIGHT+49,HEIGHT+99)))
+        #right edge
+        self.outofbounds += list(zip(np.linspace(WIDTH+50,WIDTH+50,HEIGHT+99),np.linspace(-49,HEIGHT+49,HEIGHT+99)))
         
-        arcade.schedule(function_pointer=self.add_target,interval=self.targetspawnintervall)
+        #schedule targets
+        arcade.schedule(function_pointer=self.add_target,interval=self.targetspawninterval)
+        #schedule enemys
+        arcade.schedule(function_pointer=self.add_enemy,interval=self.enemyspawninterval)
     '''
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int):
         self.player.center_x = arcade.clamp(x, 0, WIDTH)
         self.player.center_y = arcade.clamp(y, 0, HEIGHT)
     '''
+    
     def on_key_press(self, symbol: int, modifiers: int):
         if symbol==114:
             arcade_game.setup()
@@ -96,7 +123,7 @@ class ArcadeBasic(arcade.Window):
     def on_key_release(self, symbol: int, modifiers: int):
         if symbol==116:
             with open('GameStats.csv','a') as statfile:
-                np.savetxt(statfile,[str(self.frames)+","+str(self.targethitcount)],fmt='%s')
+                np.savetxt(statfile,[str(round(self.frames/60,3))+","+str(self.targethitcount)+","+str(self.finished)],fmt='%s')
         if symbol==119:
             self.player.keyw = False
         if symbol==97:
@@ -138,26 +165,60 @@ class ArcadeBasic(arcade.Window):
         if self.player.center_y>HEIGHT:
             self.player.center_y=HEIGHT
         
+        #Enemy movement
+        i=0
+        for enemy in self.enemies:
+            if enemy.center_x<=-55:
+                self.enemyvel[i][0] = -self.enemyvel[i][0]
+            if enemy.center_x>=WIDTH+55:
+                self.enemyvel[i][0] = -self.enemyvel[i][0]
+            if enemy.center_y<=-55:
+                self.enemyvel[i][1] = -self.enemyvel[i][1]
+            if enemy.center_y>=HEIGHT+55:
+                self.enemyvel[i][1] = -self.enemyvel[i][1]
+            enemy.center_x += self.enemyvel[i][0]
+            enemy.center_y += self.enemyvel[i][1]
+            i += 1
+        
         #Target collision
-        check_hit = arcade.check_for_collision_with_list(sprite=self.player, sprite_list=self.targets)
-        for target in check_hit:
+        check_targethit = arcade.check_for_collision_with_list(sprite=self.player, sprite_list=self.targets)
+        for target in check_targethit:
             target.remove_from_sprite_lists()
             self.targethitcount +=1
             #make game go brrr
             if self.player.speed<= 20:
                 self.player.speed += 0.3
-            if self.targetspawnintervall>=0.5:
-                self.targetspawnintervall -= 0.2
-            
-        if self.targethitcount>=50:
+            if self.targetspawninterval>=0.5:
+                self.targetspawninterval -= 0.2
+        
+        #Enemy collision
+        check_enemyhit = arcade.check_for_collision_with_list(sprite=self.player,sprite_list=self.enemies)
+        if len(check_enemyhit)>0:
+            self.lost = True
+        #lost condition check
+        if self.lost == True:
             self.player.speed = 0
-            self.targetspawnintervall = 100000
+            self.targetspawninterval = 100000
+            self.enemyspawninterval = 100000
+            #remove all targets
+            for target in self.targets:
+                target.remove_from_sprite_lists()
+            #remove all enemies
+            for enemy in self.enemies:
+                enemy.remove_from_sprite_lists()
+        #win condition check
+        if self.targethitcount>=50:
+            self.targetspawninterval = 100000
+            self.enemyspawninterval = 100000
             #remove all targets
             for target in self.targets:
                 target.remove_from_sprite_lists()
                 self.finished = True
+            #remove all enemies
+            for enemy in self.enemies:
+                enemy.remove_from_sprite_lists()
         #update frame counter
-        if self.finished == False:
+        if self.finished == False and self.lost == False:
             self.frames += 1
         
     def add_target(self,dt: float):
@@ -175,13 +236,40 @@ class ArcadeBasic(arcade.Window):
         if len(self.targets)<5:
             self.targets.append(target)
         
-        
-        
         #unschedule last target
         arcade.unschedule(function_pointer=self.add_target)
         #schedule next target
-        arcade.schedule(function_pointer=self.add_target,interval=random.uniform(self.targetspawnintervall-0.5,self.targetspawnintervall+0.5))
-            
+        arcade.schedule(function_pointer=self.add_target,interval=random.uniform(self.targetspawninterval-0.5,self.targetspawninterval+0.5))
+    
+    def add_enemy(self, dt:float):
+        enemyimage = Path.cwd() / "enemy.png"
+        enemy = arcade.Sprite(
+            filename = enemyimage,
+            scale = 0.7,
+            center_x = random.choice(self.outofbounds)[0],
+            center_y = random.choice(self.outofbounds)[1]
+        )
+        xvel = 0
+        yvel = 0
+        if enemy.center_x<0:
+            xvel = random.uniform(1,4)
+        elif enemy.center_x>0:
+            xvel = random.uniform(-4,-1)
+        if enemy.center_y<0:
+            yvel = random.uniform(1,4)
+        elif enemy.center_y>0:
+            yvel = random.uniform(-4,-1)
+        #append to enemy SpriteList if not more than 10 present
+        if len(self.enemies)<8:
+            self.enemies.append(enemy)
+            self.enemyvel += [[xvel,yvel]]
+        
+        #unschedule last target
+        arcade.unschedule(function_pointer=self.add_enemy)
+        #schedule next target
+        arcade.schedule(function_pointer=self.add_enemy,interval=random.uniform(self.enemyspawninterval-0.5,self.enemyspawninterval+0.5))
+    
+    
     def on_draw(self):
         #Called once per frame
         arcade.start_render()
@@ -191,6 +279,8 @@ class ArcadeBasic(arcade.Window):
         
         #draw targets
         self.targets.draw()
+        #draw enemies
+        self.enemies.draw()
         #saving past steps into array
         
         if len(self.pastpos)<=self.swivelength:
@@ -224,7 +314,7 @@ class ArcadeBasic(arcade.Window):
         # Draw an orange caption along the bottom in 60-point font
         arcade.draw_text(
             text="Targets Hit: "+str(self.targethitcount),
-            start_x=100,
+            start_x=0,
             start_y=50,
             font_size=28,
             color=arcade.color.WHITE,
@@ -239,21 +329,43 @@ class ArcadeBasic(arcade.Window):
         if self.finished==True:
             arcade.draw_text(
                 text="You did it!",
-                start_x=WIDTH/2,
+                start_x=WIDTH/3,
                 start_y=HEIGHT/2,
                 font_size=40,
                 color=arcade.color.WHITE,
             )
             arcade.draw_text(
                 text="Press 'R' to play again",
-                start_x=WIDTH/2,
+                start_x=WIDTH/3,
                 start_y=HEIGHT/2-40,
                 font_size=25,
                 color=arcade.color.WHITE,
             )
             arcade.draw_text(
                 text="Press 'T' to save stats",
-                start_x=WIDTH/2,
+                start_x=WIDTH/3,
+                start_y=HEIGHT/2-80,
+                font_size=25,
+                color=arcade.color.WHITE,
+            )
+        if self.lost==True:
+            arcade.draw_text(
+                text="GAME OVER",
+                start_x=WIDTH/3,
+                start_y=HEIGHT/2,
+                font_size=40,
+                color=arcade.color.RED,
+            )
+            arcade.draw_text(
+                text="Press 'R' to play again",
+                start_x=WIDTH/3,
+                start_y=HEIGHT/2-40,
+                font_size=25,
+                color=arcade.color.WHITE,
+            )
+            arcade.draw_text(
+                text="Press 'T' to save stats",
+                start_x=WIDTH/3,
                 start_y=HEIGHT/2-80,
                 font_size=25,
                 color=arcade.color.WHITE,
