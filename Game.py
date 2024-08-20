@@ -94,7 +94,6 @@ class ArcadeBasic(arcade.Window):
         self.outofbounds += list(zip(np.linspace(-50,-50,HEIGHT+99),np.linspace(-49,HEIGHT+49,HEIGHT+99)))
         #right edge
         self.outofbounds += list(zip(np.linspace(WIDTH+50,WIDTH+50,HEIGHT+99),np.linspace(-49,HEIGHT+49,HEIGHT+99)))
-        np.savetxt('edge.txt',self.outofbounds)
         #schedule targets
         arcade.schedule(function_pointer=self.add_target,interval=self.targetspawninterval)
         #schedule enemys
@@ -177,6 +176,11 @@ class ArcadeBasic(arcade.Window):
                 self.enemyvel[i][1] = -self.enemyvel[i][1]
             enemy.center_x += self.enemyvel[i][0]
             enemy.center_y += self.enemyvel[i][1]
+            #enemy rotation
+            if self.enemyvel[i][0]>0:
+                enemy.angle = math.atan(self.enemyvel[i][1]/self.enemyvel[i][0])*180/np.pi-90
+            if self.enemyvel[i][0]<0:
+                enemy.angle = math.atan(self.enemyvel[i][1]/self.enemyvel[i][0])*180/np.pi+90
             i += 1
         
         #Target collision
@@ -196,6 +200,8 @@ class ArcadeBasic(arcade.Window):
             self.lost = True
         #lost condition check
         if self.lost == True:
+            arcade.unschedule(function_pointer=self.add_target)
+            arcade.unschedule(function_pointer=self.add_enemy)
             self.player.speed = 0
             self.targetspawninterval = 100000
             self.enemyspawninterval = 100000
@@ -207,6 +213,8 @@ class ArcadeBasic(arcade.Window):
                 enemy.remove_from_sprite_lists()
         #win condition check
         if self.targethitcount>=50:
+            arcade.unschedule(function_pointer=self.add_target)
+            arcade.unschedule(function_pointer=self.add_enemy)
             self.targetspawninterval = 100000
             self.enemyspawninterval = 100000
             #remove all targets
@@ -245,11 +253,10 @@ class ArcadeBasic(arcade.Window):
         pos = random.choice(self.outofbounds)
         enemy = arcade.Sprite(
             filename = enemyimage,
-            scale = 0.7,
+            scale = 1,
             center_x = pos[0],
             center_y = pos[1]
         )
-        print(enemy.center_x,enemy.center_y)
         xvel = 0
         yvel = 0
         if enemy.center_x<0:
