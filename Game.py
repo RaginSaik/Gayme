@@ -94,7 +94,7 @@ class ArcadeBasic(arcade.Window):
         self.outofbounds += list(zip(np.linspace(-50,-50,HEIGHT+99),np.linspace(-49,HEIGHT+49,HEIGHT+99)))
         #right edge
         self.outofbounds += list(zip(np.linspace(WIDTH+50,WIDTH+50,HEIGHT+99),np.linspace(-49,HEIGHT+49,HEIGHT+99)))
-        
+        np.savetxt('edge.txt',self.outofbounds)
         #schedule targets
         arcade.schedule(function_pointer=self.add_target,interval=self.targetspawninterval)
         #schedule enemys
@@ -242,12 +242,14 @@ class ArcadeBasic(arcade.Window):
     
     def add_enemy(self, dt:float):
         enemyimage = Path.cwd() / "enemy.png"
+        pos = random.choice(self.outofbounds)
         enemy = arcade.Sprite(
             filename = enemyimage,
             scale = 0.7,
-            center_x = random.choice(self.outofbounds)[0],
-            center_y = random.choice(self.outofbounds)[1]
+            center_x = pos[0],
+            center_y = pos[1]
         )
+        print(enemy.center_x,enemy.center_y)
         xvel = 0
         yvel = 0
         if enemy.center_x<0:
@@ -259,7 +261,7 @@ class ArcadeBasic(arcade.Window):
         elif enemy.center_y>0:
             yvel = random.uniform(-4,-1)
         #append to enemy SpriteList if not more than 10 present
-        if len(self.enemies)<8:
+        if len(self.enemies)<10:
             self.enemies.append(enemy)
             self.enemyvel += [[xvel,yvel]]
         
