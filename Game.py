@@ -16,15 +16,16 @@ from random import randint
 import random
 import numpy as np
 from pathlib import Path
+from screeninfo import get_monitors
 # Set the width and height of your output window, in pixels
-WIDTH = 1000
-HEIGHT = 700
+WIDTH = get_monitors()[0].width
+HEIGHT = get_monitors()[0].height
 # Classes
 
 
 class ArcadeBasic(arcade.Window):
     """Main game window"""
-    def __init__(self, width: int, height: int, title: str):
+    def __init__(self, width: int, height: int, title: str, fullscreen: bool):
         """Initialize the window to a specific size
 
         Arguments:
@@ -33,7 +34,7 @@ class ArcadeBasic(arcade.Window):
             title {str} -- Title for the window
         """
         # Call the parent class constructor
-        super().__init__(width, height, title)
+        super().__init__(width, height, title, fullscreen)
         
         #maximum number of circles in swive (length), higher==longer
         self.swivelength=20
@@ -381,6 +382,6 @@ class ArcadeBasic(arcade.Window):
 
 # Run the program
 if __name__ == "__main__":
-    arcade_game = ArcadeBasic(WIDTH, HEIGHT, "Arcade Basic Game")
+    arcade_game = ArcadeBasic(WIDTH, HEIGHT, "Arcade Basic Game", True)
     arcade_game.setup()
     arcade_game.run()
