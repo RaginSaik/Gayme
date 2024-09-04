@@ -1,12 +1,19 @@
-"""
-Basic "Hello, World!" program in Arcade
-
-This program is designed to demonstrate the basic capabilities
-of Arcade. It will:
-- Create a game window
-- Fill the background with white
-- Draw some basic shapes in different colors
-- Draw some text in a specified size and color
+""""Level creating file for basic mode
+needs following parameters:
+playerspeed: float, 
+playermaxspeed: float, 
+playeracc: float, 
+targetspawnintervalrandomness: float, 
+targetspawninterval: float, 
+targetspawnacc: float, 
+targetspawnintervalmin: float, 
+enemyspawnintervalrandomness: float,
+enemyspawninterval: float,
+enemyvel: float,
+enemyvelrandomness: float,
+targetgoal: int,
+targetcountmax: int,
+enemycountmax: int
 """
 
 # Import arcade allows the program to run in Python IDLE
@@ -16,13 +23,11 @@ from random import randint
 import random
 import numpy as np
 from pathlib import Path
-from screeninfo import get_monitors
+import os
+import sys
 # Set the width and height of your output window, in pixels
-WIDTH = get_monitors()[0].width
-HEIGHT = get_monitors()[0].height
+WIDTH,HEIGHT = arcade.get_display_size()
 # Classes
-
-
 class ArcadeBasic(arcade.Window):
     """Main game window"""
     def __init__(self, width: int, height: int, title: str, fullscreen: bool):
@@ -50,7 +55,7 @@ class ArcadeBasic(arcade.Window):
         self.enemies = arcade.SpriteList()
         self.enemyvel = []
 
-    def setup(self):
+    def setup(self, playerspeed: float, playermaxspeed: float, playeracc: float, targetspawnintervalrandomness: float, targetspawninterval: float, targetspawnacc: float, targetspawnintervalmin: float, enemyspawnintervalrandomness: float, enemyspawninterval: float, enemyvel: float, enemyvelrandomness: float, targetgoal: int, targetcountmax: int, enemycountmax: int):
         arcade.set_background_color(color=(0,0,0))
         player_image = Path.cwd() / "playercirc.png"
         self.player = arcade.Sprite(
@@ -58,23 +63,39 @@ class ArcadeBasic(arcade.Window):
         )
         self.player.xvel=0
         self.player.yvel=0
-        #set initial speed of player
-        self.player.speed = 5
+        #set initial and max speed of player
+        self.player.speed = playerspeed
+        self.maxplayerspeed = playermaxspeed
+        self.playeracc = playeracc
         #initialize movement key press booleans
         self.player.keyw = False
         self.player.keya = False
         self.player.keys = False
         self.player.keyd = False
-        #inital spawn interval of targets
-        self.targetspawninterval = 3
+        #set target spawninterval and randomness and acc and min
+        self.targetspawnintervalrandomness = targetspawnintervalrandomness
+        self.targetspawninterval = targetspawninterval
+        self.targetspawnacc = targetspawnacc
+        self.targetspawnintervalmin = targetspawnintervalmin
         #initialize target hit count
         self.targethitcount = 0
-        #nitial enemy spawn interval
-        self.enemyspawninterval = 2
+        #nitial enemy spawn interval and randomness
+        self.enemyspawnintervalrandomness = enemyspawnintervalrandomness
+        self.enemyspawninterval = enemyspawninterval
         #initial enemy hit count
         self.enemyhitcount = 0
         #setup frame counter
         self.frames = 0
+        #set win condition
+        self.targetgoal = targetgoal
+        #set max amount of targets to be on screen
+        self.targetcountmax = targetcountmax
+        #set max amount of enemies to be on screen
+        self.enemycountmax = enemycountmax
+        #enemy velocity and deviance
+        self.enemyvelo = enemyvel
+        self.enemyvelrandomness = enemyvelrandomness
+        
         #is game won?
         self.finished = False
         #is game lost?
@@ -106,8 +127,17 @@ class ArcadeBasic(arcade.Window):
     '''
     
     def on_key_press(self, symbol: int, modifiers: int):
-        if symbol==114:
-            arcade_game.setup()
+        #press ESC to go to Main Menu
+        if symbol == 65307:
+            arcade.close_window()
+            os.system('python MainMenu.py')
+            arcade.exit()
+        '''if symbol==114:
+            arcade.close_window()
+            os.system('python BasicGame.py')
+            arcade.exit()
+            #Needs to give Parameters'''
+        #Movement Keys
         if symbol==119:
             self.player.keyw = True
         if symbol==97:
@@ -190,10 +220,10 @@ class ArcadeBasic(arcade.Window):
             target.remove_from_sprite_lists()
             self.targethitcount +=1
             #make game go brrr
-            if self.player.speed<= 20:
-                self.player.speed += 0.3
-            if self.targetspawninterval>=0.5:
-                self.targetspawninterval -= 0.2
+            if self.player.speed<= self.maxplayerspeed:
+                self.player.speed += self.playeracc
+            if self.targetspawninterval>=self.targetspawnintervalmin:
+                self.targetspawninterval -= self.targetspawnacc
         
         #Enemy collision
         check_enemyhit = arcade.check_for_collision_with_list(sprite=self.player,sprite_list=self.enemies)
@@ -213,7 +243,7 @@ class ArcadeBasic(arcade.Window):
             for enemy in self.enemies:
                 enemy.remove_from_sprite_lists()
         #win condition check
-        if self.targethitcount>=50:
+        if self.targethitcount>=self.targetgoal:
             arcade.unschedule(function_pointer=self.add_target)
             arcade.unschedule(function_pointer=self.add_enemy)
             self.targetspawninterval = 100000
@@ -221,10 +251,10 @@ class ArcadeBasic(arcade.Window):
             #remove all targets
             for target in self.targets:
                 target.remove_from_sprite_lists()
-                self.finished = True
             #remove all enemies
             for enemy in self.enemies:
                 enemy.remove_from_sprite_lists()
+            self.finished = True
         #update frame counter
         if self.finished == False and self.lost == False:
             self.frames += 1
@@ -241,13 +271,13 @@ class ArcadeBasic(arcade.Window):
             flipped_vertically=random.choice([True,False])
         )
         #append target to list if not more than 5 on screen
-        if len(self.targets)<5:
+        if len(self.targets)<self.targetcountmax:
             self.targets.append(target)
         
         #unschedule last target
         arcade.unschedule(function_pointer=self.add_target)
         #schedule next target
-        arcade.schedule(function_pointer=self.add_target,interval=random.uniform(self.targetspawninterval-0.5,self.targetspawninterval+0.5))
+        arcade.schedule(function_pointer=self.add_target,interval=random.uniform(self.targetspawninterval-self.targetspawnintervalrandomness,self.targetspawninterval+self.targetspawnintervalrandomness))
     
     def add_enemy(self, dt:float):
         enemyimage = Path.cwd() / "enemy.png"
@@ -261,23 +291,22 @@ class ArcadeBasic(arcade.Window):
         xvel = 0
         yvel = 0
         if enemy.center_x<0:
-            xvel = random.uniform(1,4)
+            xvel = random.uniform(self.enemyvelo-self.enemyvelrandomness,self.enemyvelo+self.enemyvelrandomness)
         elif enemy.center_x>0:
-            xvel = random.uniform(-4,-1)
+            xvel = random.uniform(-(self.enemyvelo+self.enemyvelrandomness),-(self.enemyvelo-self.enemyvelrandomness))
         if enemy.center_y<0:
-            yvel = random.uniform(1,4)
+            yvel = random.uniform(self.enemyvelo-self.enemyvelrandomness,self.enemyvelo+self.enemyvelrandomness)
         elif enemy.center_y>0:
-            yvel = random.uniform(-4,-1)
+            yvel = random.uniform(-(self.enemyvelo+self.enemyvelrandomness),-(self.enemyvelo-self.enemyvelrandomness))
         #append to enemy SpriteList if not more than 10 present
-        if len(self.enemies)<10:
+        if len(self.enemies)<self.enemycountmax:
             self.enemies.append(enemy)
             self.enemyvel += [[xvel,yvel]]
         
         #unschedule last target
         arcade.unschedule(function_pointer=self.add_enemy)
         #schedule next target
-        arcade.schedule(function_pointer=self.add_enemy,interval=random.uniform(self.enemyspawninterval-0.5,self.enemyspawninterval+0.5))
-    
+        arcade.schedule(function_pointer=self.add_enemy,interval=random.uniform(self.enemyspawninterval-self.enemyspawnintervalrandomness,self.enemyspawninterval+self.enemyspawnintervalrandomness))
     
     def on_draw(self):
         #Called once per frame
@@ -329,6 +358,13 @@ class ArcadeBasic(arcade.Window):
             color=arcade.color.WHITE,
         )
         arcade.draw_text(
+            text="'ESC' to exit",
+            start_x=0,
+            start_y=HEIGHT-30,
+            font_size=24,
+            color=arcade.color.WHITE,
+        )
+        arcade.draw_text(
             text="Frames passed: "+str(self.frames)+" aka "+str(round(self.frames/60,3))+"s",
             start_x=100,
             start_y=100,
@@ -343,13 +379,14 @@ class ArcadeBasic(arcade.Window):
                 font_size=40,
                 color=arcade.color.WHITE,
             )
+            '''
             arcade.draw_text(
                 text="Press 'R' to play again",
                 start_x=WIDTH/3,
                 start_y=HEIGHT/2-40,
                 font_size=25,
                 color=arcade.color.WHITE,
-            )
+            )'''
             arcade.draw_text(
                 text="Press 'T' to save stats",
                 start_x=WIDTH/3,
@@ -383,5 +420,5 @@ class ArcadeBasic(arcade.Window):
 # Run the program
 if __name__ == "__main__":
     arcade_game = ArcadeBasic(WIDTH, HEIGHT, "Arcade Basic Game", True)
-    arcade_game.setup()
+    arcade_game.setup(float(sys.argv[1]),float(sys.argv[2]),float(sys.argv[3]),float(sys.argv[4]),float(sys.argv[5]),float(sys.argv[6]),float(sys.argv[7]),float(sys.argv[8]),float(sys.argv[9]),float(sys.argv[10]),float(sys.argv[11]),int(sys.argv[12]),int(sys.argv[13]),int(sys.argv[14]))
     arcade_game.run()
