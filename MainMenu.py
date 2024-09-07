@@ -122,13 +122,13 @@ def level_starter(mode: str, level: str):
     targetcountmax: int,
     enemycountmax: int"""
     if mode=='basic' and level == "Level I":
-        os.system('python BasicLevel.py 5 10 0.5 0 3 025 1.5 0 5 2.5 1.5 20 5 5')
+        os.system('python BasicLevel.py 3 10 0.5 0 3 025 1.5 0 5 2.5 1.5 20 5 5')
     if mode=='basic' and level == "Level II":
-        os.system('python BasicLevel.py 5 15 0.5 0.2 3 0.25 1 0.2 4 3 1.5 30 5 7')
+        os.system('python BasicLevel.py 4 15 0.5 0.2 3 0.25 1 0.2 4 3 1.5 30 5 7')
     if mode=='basic' and level == "Level III":
         os.system('python BasicLevel.py 5 25 0.5 0.5 3 0.25 0.75 0.5 3 5 1.5 50 5 10')
     if mode=='basic' and level == "Bonus Level":
-        os.system('python EnduranceLevel.py 5 30 0.25 1 5 0.25 1 0.5 5 2 3 7 20')
+        os.system('python EnduranceLevel.py 8 30 0.25 0.75 3 0.25 1 0.5 3 5 2 7 20')
 def run():
     window = MyWindow()
     arcade.run()
