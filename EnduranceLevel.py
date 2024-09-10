@@ -27,7 +27,7 @@ import sys
 # Set the width and height of your output window, in pixels
 WIDTH,HEIGHT = arcade.get_display_size()
 # Classes
-class ArcadeBasic(arcade.Window):
+class EnduranceLevel(arcade.Window):
     """Main game window"""
     def __init__(self, width: int, height: int, title: str, fullscreen: bool):
         """Initialize the window to a specific size
@@ -378,6 +378,6 @@ class ArcadeBasic(arcade.Window):
 
 # Run the program
 if __name__ == "__main__":
-    arcade_game = ArcadeBasic(WIDTH, HEIGHT, "Arcade Basic Game", True)
+    arcade_game = EnduranceLevel(WIDTH, HEIGHT, "Arcade Basic Game", True)
     arcade_game.setup(float(sys.argv[1]),float(sys.argv[2]),float(sys.argv[3]),float(sys.argv[4]),float(sys.argv[5]),float(sys.argv[6]),float(sys.argv[7]),float(sys.argv[8]),float(sys.argv[9]),float(sys.argv[10]),float(sys.argv[11]),int(sys.argv[12]),int(sys.argv[13]))
     arcade_game.run()
