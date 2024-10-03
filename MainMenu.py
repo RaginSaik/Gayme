@@ -91,6 +91,7 @@ class MainMenu(arcade.Window):
         #Press up to move up in mode selector
         if symbol==65362:
             self.v_box2.remove(self.levelUIButton)
+            
             if self.levelpointer[1]<len(self.levelnames)-1:
                 self.levelpointer[0] = 0
                 self.levelpointer[1] += 1
@@ -227,7 +228,9 @@ class BasicLevel(arcade.Window):
             arcade.close_window()
             os.system('python MainMenu.py')
             arcade.exit()
-        '''if symbol==114:
+        '''
+        #Press R to restart level
+        if symbol==114:
             arcade.close_window()
             os.system('python BasicGame.py')
             arcade.exit()
@@ -610,11 +613,14 @@ class EnduranceLevel(arcade.Window):
     '''
     
     def on_key_press(self, symbol: int, modifiers: int):
+        #Press Esc to return to MainMenu
         if symbol == 65307:
             arcade.close_window()
             os.system('python MainMenu.py')
             arcade.exit()
-        '''if symbol==114:
+        '''
+        #Press R to retart level
+        if symbol==114:
             arcade.close_window()
             os.system('python EnduranceGame.py')
             arcade.exit()
@@ -862,6 +868,11 @@ class EnduranceLevel(arcade.Window):
                 color=arcade.color.WHITE,
             )
 
+#helper func to create basic enemies with certain attributes
+#def create_basic_enemy():
+
+
+#helper func to create UILabels
 def create_UILabel(name: str):
     return arcade.gui.UITextArea(text=name,
     width=200,
@@ -869,6 +880,7 @@ def create_UILabel(name: str):
     font_size=20,
     font_name="Arial")
 
+#helper func to start level
 def level_starter(mode: str, level: str):
     """BasicLevel.py needs following parameters:
     playerspeed: float, 
